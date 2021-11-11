@@ -19,8 +19,9 @@ import com.google.android.libraries.maps.*
 
 
 @Composable
-fun GoogleMap(controller:GoogleMapViewController) {
+fun GoogleMap() {
     val context = LocalContext.current
+    val controller = GoogleMapViewController()
 
     val map = controller.createMapView()
     requestPermissions(

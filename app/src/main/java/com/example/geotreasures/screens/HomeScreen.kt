@@ -3,6 +3,7 @@ package com.example.geotreasures.screens
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
@@ -18,6 +19,7 @@ import com.example.geotreasures.components.CacheInfo
 import com.example.geotreasures.data.CacheSummaryModel
 import com.example.geotreasures.map.GoogleMapViewController
 import com.example.geotreasures.map.MapInteractionDataStore
+import kotlin.math.roundToInt
 
 
 @ExperimentalAnimationApi
@@ -25,14 +27,15 @@ import com.example.geotreasures.map.MapInteractionDataStore
 fun HomeScreen() {
     val activeCacheDetails = MapInteractionDataStore.activeCache.observeAsState()
     val halfScreenHeightMap = remember { mutableStateOf(false) }
-    val mapController = remember { mutableStateOf(GoogleMapViewController()) }
     halfScreenHeightMap.value = activeCacheDetails.value != null
+
+    val mapHeightCoefficient = animateFloatAsState(if (activeCacheDetails.value != null) 2f else 1f)
     Column {
         Box(
             modifier = Modifier
                 .layout { measurable, constraints ->
-                    val tileHeight =
-                        constraints.maxHeight / (if (halfScreenHeightMap.value) 2 else 1)
+                    val tileHeight:Int =
+                        (constraints.maxHeight / mapHeightCoefficient.value).roundToInt()
                     val placeable = measurable.measure(
                         constraints.copy(
                             minWidth = constraints.maxWidth,
@@ -50,7 +53,7 @@ fun HomeScreen() {
         ) {
             // code, name to struct to prevent map reloading
 
-            GoogleMap(mapController.value)
+            GoogleMap()
             Column(
                 verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
