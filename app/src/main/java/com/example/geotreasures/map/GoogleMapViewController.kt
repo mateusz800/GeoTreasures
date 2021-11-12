@@ -6,6 +6,9 @@ import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.example.geotreasures.MainApplication
 import com.example.geotreasures.R
 import com.example.geotreasures.Singletons
@@ -17,21 +20,34 @@ import com.google.android.libraries.maps.GoogleMap
 import com.google.android.libraries.maps.MapView
 import com.google.android.libraries.maps.model.*
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class GoogleMapViewController :
     MapViewController(), GoogleMap.OnCameraIdleListener,
     GoogleMap.OnMarkerClickListener, GoogleMap.OnMyLocationButtonClickListener,
-    GoogleMap.OnMapClickListener {
+    GoogleMap.OnMapClickListener, LifecycleOwner {
 
     private val context = MainApplication.applicationContext()
     private var mapObject: GoogleMap? = null
-    private var selectedMarker:Marker? = null
-    private var currentLocationMarker:Marker? = null
-    private val cacheMarkers:MutableSet<Marker> = mutableSetOf()
+    private var selectedMarker: Marker? = null
+    private var currentLocationMarker: Marker? = null
+    private val cacheMarkers: MutableSet<Marker> = mutableSetOf()
+    private var blockMap: Boolean = false
+
 
     init {
         Singletons.mapController = this
+        MapInteractionDataStore.activeCache.observeForever { model ->
+            if (model != null) {
+                blockMap = true
+                clearAllMarkersExcept(setOf(selectedMarker, currentLocationMarker))
+                centerOnSelectedCache()
+            } else {
+                blockMap = false
+                onCameraIdle()
+            }
+        }
     }
 
     @Composable
@@ -42,14 +58,14 @@ class GoogleMapViewController :
                 id = R.id.map
             }
         }
-        map.onCreate(Bundle());
+        map.onCreate(Bundle())
         return map
     }
 
     @SuppressLint("MissingPermission")
     fun setMapObject(mapObject: GoogleMap) {
         this.mapObject = mapObject
-        if(!checkPermissions()){
+        if (!checkPermissions()) {
             mapObject.isMyLocationEnabled = false
             mapObject.uiSettings.isMyLocationButtonEnabled = false
             return
@@ -64,10 +80,9 @@ class GoogleMapViewController :
     }
 
 
-
     @SuppressLint("MissingPermission")
     override fun centerOnCurrentLocation() {
-        if(!checkPermissions()){
+        if (!checkPermissions()) {
             // TODO: handle no permission
             return
         }
@@ -78,7 +93,7 @@ class GoogleMapViewController :
                 mapObject?.animateCamera(
                     CameraUpdateFactory.newLatLng(latLng)
                 )
-                if(currentLocationMarker == null){
+                if (currentLocationMarker == null) {
                     currentLocationMarker = addMarker(latLng, MapMarker.CURRENT_LOCATION.bitmap)
                 } else {
                     currentLocationMarker?.position = latLng
@@ -87,36 +102,30 @@ class GoogleMapViewController :
     }
 
 
-
     override fun onCameraIdle() {
+        if (blockMap) {
+            return
+        }
         val location = mapObject?.cameraPosition?.target
+        //clearAllMarkersExcept(setOf(selectedMarker, currentLocationMarker))
         MainScope().launch {
             if (location != null) {
                 val latLng = LatLng(location.latitude, location.longitude)
                 val caches =
                     DataFetcher.fetchNearlyCaches(latLng)
-                selectedMarker = null
-
-                val itr = cacheMarkers.iterator()
-                while (itr.hasNext()) {
-                    val marker = itr.next()
-                    if(marker != selectedMarker){
-                        marker.remove()
-                        itr.remove()
-                    }
-                }
-
                 caches.forEach { model ->
                     val marker = addMarker(model.location, MapMarker.DEFAULT.bitmap, model)
-                    if(marker != null){
+                    if (marker != null) {
                         cacheMarkers.add(marker)
                     }
+                    delay(5)
                 }
             }
         }
     }
+
     override fun addMarker(position: LatLng, marker: Bitmap): Marker? {
-       return mapObject?.addMarker(
+        return mapObject?.addMarker(
             MarkerOptions()
                 .position(position)
                 .icon(BitmapDescriptorFactory.fromBitmap(marker))
@@ -125,7 +134,11 @@ class GoogleMapViewController :
         )
     }
 
-    override fun addMarker( position: LatLng, marker:Bitmap, cacheInfo:CacheSummaryModel):Marker? {
+    override fun addMarker(
+        position: LatLng,
+        marker: Bitmap,
+        cacheInfo: CacheSummaryModel
+    ): Marker? {
         val marker = mapObject?.addMarker(
             MarkerOptions()
                 .position(position)
@@ -136,6 +149,28 @@ class GoogleMapViewController :
         )
         marker?.tag = cacheInfo.code
         return marker
+    }
+
+    private fun clearAllMarkersExcept(exceptMarkers: Set<Marker?>) {
+            val itr = cacheMarkers.iterator()
+
+            while (itr.hasNext()) {
+                val marker = itr.next()
+                if (!exceptMarkers.contains(marker)) {
+
+                    marker.remove()
+                    itr.remove()
+                }
+            }
+        
+    }
+
+    private fun centerOnSelectedCache() {
+        if (selectedMarker != null) {
+            mapObject?.animateCamera(
+                CameraUpdateFactory.newLatLng(selectedMarker!!.position)
+            )
+        }
     }
 
     override fun onMarkerClick(marker: Marker?): Boolean {
@@ -162,6 +197,10 @@ class GoogleMapViewController :
     override fun onMyLocationButtonClick(): Boolean {
         centerOnCurrentLocation()
         return true
+    }
+
+    override fun getLifecycle(): Lifecycle {
+        return LifecycleRegistry(this)
     }
 
 }

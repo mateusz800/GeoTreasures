@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onBackPressed() {
         if(MapInteractionDataStore.activeCache.value != null){
-            MapInteractionDataStore.activeCache.postValue(null)
+            MapInteractionDataStore.setActiveCache(null)
         } else {
             super.onBackPressed()
         }

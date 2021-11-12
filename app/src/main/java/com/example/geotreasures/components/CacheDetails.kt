@@ -14,6 +14,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.geotreasures.components.HtmlText
@@ -27,8 +28,7 @@ fun CacheDetails(model: CacheDetailsModel) {
     Column(
         modifier = Modifier
             .background(Color.White)
-            .fillMaxSize()
-            .verticalScroll(state = scrollState)
+            .padding(bottom = 300.dp)
     ) {
         //InfoCard(code = model.code, title = model.name)
         Box(Modifier.padding(10.dp)) {

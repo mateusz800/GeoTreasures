@@ -3,6 +3,7 @@ package com.example.geotreasures.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ fun InfoCard(code:String, title:String){
             .background(Color.White, Shapes.small)
             .padding(horizontal = 15.dp, vertical = 10.dp)
             .fillMaxWidth()
+            .height(60.dp)
 
     ) {
         Text(code, fontSize = 12.sp)

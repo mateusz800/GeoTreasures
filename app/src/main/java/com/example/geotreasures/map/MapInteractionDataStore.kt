@@ -12,10 +12,19 @@ object MapInteractionDataStore{
         private set
     var activeCache:MutableLiveData<CacheDetailsModel?> = MutableLiveData(null)
         private set
+    var activeCacheBackup:CacheDetailsModel? = null
+
 
     fun setSelectedCache(model: CacheSummaryModel?){
         previousSelectedCache.postValue(selectedCache.value)
         selectedCache.postValue(model)
+    }
+
+    fun setActiveCache(model:CacheDetailsModel?){
+        if(model != null){
+            activeCacheBackup = model
+        }
+        activeCache.postValue(model)
     }
 
 
