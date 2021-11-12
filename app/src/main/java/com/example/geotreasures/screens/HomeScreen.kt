@@ -142,7 +142,6 @@ fun HomeScreen() {
         Box(modifier = Modifier
             .fillMaxSize()
             .zIndex(-1f)
-
             .pointerInput(Unit) {
                 detectVerticalDragGestures { change, dragAmount ->
                     if (dragAmount < 0) {
