@@ -1,5 +1,6 @@
 package com.example.geotreasures.screens
 
+import android.util.Log
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -13,9 +14,11 @@ import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -33,6 +36,7 @@ import com.example.geotreasures.MainApplication
 import com.example.geotreasures.components.CurrentLocationBtn
 import com.example.geotreasures.components.GoogleMap
 import com.example.geotreasures.components.CacheInfo
+import com.example.geotreasures.components.CloseButton
 import com.example.geotreasures.data.CacheSummaryModel
 import com.example.geotreasures.map.GoogleMapViewController
 import com.example.geotreasures.map.MapInteractionDataStore
@@ -63,8 +67,9 @@ fun HomeScreen() {
         targetValue = if (activeCacheDetails.value != null) 2f else 1f,
         animationSpec = tween(1000)
     )
+    val maxMapHeightSubtraction = 2*LocalConfiguration.current.screenHeightDp.toFloat()
     val mapHeightSubtraction = animateFloatAsState(
-        targetValue = if(swipeUp.value) 2*LocalConfiguration.current.screenHeightDp.toFloat() else 0f,
+        targetValue = if(swipeUp.value) maxMapHeightSubtraction else 0f,
         animationSpec = tween(1000)
     )
     var mapTileHeight: Int
@@ -114,7 +119,6 @@ fun HomeScreen() {
                 verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
                     .fillMaxSize()
-
             ) {
                 Box(modifier = Modifier
                     .padding(cardPadding.value.dp)
@@ -123,24 +127,29 @@ fun HomeScreen() {
                     }
                 ) {
                     CacheInfo()
+                    if(mapHeightCoefficient.value == 2f) {
+                        Column(modifier = Modifier.align(Alignment.TopEnd)){
+                            CloseButton(onClick = {
+                                MapInteractionDataStore.setActiveCache(null)
+                            })
+                        }
+                    }
                 }
             }
         }
         Box(modifier = Modifier
             .fillMaxSize()
             .zIndex(-1f)
-            .verticalScroll(state = scrollState)
             .pointerInput(Unit) {
-                if (!swipeUp.value) {
-                    detectVerticalDragGestures { change, dragAmount ->
-                        if (dragAmount < 0) {
-                            swipeUp.value = true
-                        } else if (scrollState.value == 0 && dragAmount > 0) {
-                            if (!swipeUp.value && mapHeightSubtraction.value == 0f) {
-                                MapInteractionDataStore.setActiveCache(null)
-                            }
-                            swipeUp.value = false
+                detectVerticalDragGestures { change, dragAmount ->
+                    if (dragAmount < 0) {
+                        swipeUp.value = true
+
+                    } else if (scrollState.value == 0 && dragAmount > 0) {
+                        if (!swipeUp.value && mapHeightSubtraction.value == 0f) {
+                            MapInteractionDataStore.setActiveCache(null)
                         }
+                        swipeUp.value = false
                     }
                 }
             }

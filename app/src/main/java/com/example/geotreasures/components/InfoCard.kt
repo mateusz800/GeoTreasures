@@ -21,11 +21,9 @@ fun InfoCard(code:String, title:String){
             .background(Color.White, Shapes.small)
             .padding(horizontal = 15.dp, vertical = 10.dp)
             .fillMaxWidth()
-            .height(60.dp)
 
     ) {
         Text(code, fontSize = 12.sp)
-        // TODO: name in one line with animation (if text not entire visible)
         Text(title, fontSize = 18.sp)
 
     }
@@ -34,5 +32,5 @@ fun InfoCard(code:String, title:String){
 @Preview
 @Composable
 fun InfoCardPreview(){
-    InfoCard(code="OPXY78", title = "Rozbójnik 19")
+    InfoCard(code="OPXY78", title = "Kaszubskie drogowskazy LVII - drogowskaz przy drzewie")
 }
